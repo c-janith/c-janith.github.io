@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdBlock Detector Test</title>
+    <title>Advanced AdBlock & Brave Detector</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -34,59 +34,46 @@
         .loading { background-color: #ffeeba; color: #856404; }
         .detected { background-color: #f8d7da; color: #721c24; }
         .not-detected { background-color: #d4edda; color: #155724; }
-        
-        /* Bait styling to mimic real ads */
-        .ad-zone {
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-            width: 1px;
-            height: 1px;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>AdBlock Detector</h2>
-    <p>Checking your browser for active ad blockers...</p>
-    
-    <div id="ad-bait" class="ad-zone" style="display: block !important;">&nbsp;</div>
+    <h2>AdBlock / Brave Detector</h2>
+    <p>Checking browser protections...</p>
     
     <div id="status-box" class="status loading">
-        Analyzing...
+        Analyzing network behavior...
     </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", async function() {
         const statusBox = document.getElementById('status-box');
-        const bait = document.getElementById('ad-bait');
         
-        // Give the ad blocker a brief moment to manipulate the DOM/network
-        setTimeout(() => {
-            let isAdBlockActive = false;
+        // Strategy: Attempt to fetch a URL that Brave's blocklists absolutely despise.
+        // Google DoubleClick or pagead2 are perfect targets.
+        const targetUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+        
+        let isBlocked = false;
 
-            // Test 1: Check if the fake ad element was hidden or destroyed
-            if (!bait || bait.offsetParent === null || bait.offsetHeight === 0 || window.getComputedStyle(bait).display === 'none') {
-                isAdBlockActive = true;
-            }
+        try {
+            // We use 'no-cors' so the browser doesn't block it for security reasons,
+            // we ONLY care if the adblocker kills the network request.
+            const response = await fetch(new Request(targetUrl, { method: 'HEAD', mode: 'no-cors' }));
+        } catch (error) {
+            // If the fetch fails completely, Brave or an adblocker intercepted it!
+            isBlocked = true;
+        }
 
-            // Test 2: Network-based check (Tries to fetch a file name that blockers hate)
-            fetch('/js/ads.js').catch(() => {
-                // If it fails, it's highly likely blocked by an extension, 
-                // but we rely on the DOM check as the primary indicator to avoid false positives from a 404.
-            });
-
-            // Update UI based on results
-            if (isAdBlockActive) {
-                statusBox.textContent = "AdBlock Detected! 🚫";
-                statusBox.className = "status detected";
-            } else {
-                statusBox.textContent = "No AdBlock Detected. ✅";
-                statusBox.className = "status not-detected";
-            }
-        }, 300); // 300ms delay ensures extensions have executed their hiding rules
+        // Update UI
+        if (isBlocked) {
+            statusBox.textContent = "AdBlock/Brave Shields Active! 🚫";
+            statusBox.className = "status detected";
+        } else {
+            statusBox.textContent = "No AdBlock Detected. ✅";
+            statusBox.className = "status not-detected";
+        }
     });
 </script>
 
