@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdBlock Detector Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .status {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .loading { background-color: #ffeeba; color: #856404; }
+        .detected { background-color: #f8d7da; color: #721c24; }
+        .not-detected { background-color: #d4edda; color: #155724; }
+        
+        /* Bait styling to mimic real ads */
+        .ad-zone {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>AdBlock Detector</h2>
+    <p>Checking your browser for active ad blockers...</p>
+    
+    <div id="ad-bait" class="ad-zone" style="display: block !important;">&nbsp;</div>
+    
+    <div id="status-box" class="status loading">
+        Analyzing...
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const statusBox = document.getElementById('status-box');
+        const bait = document.getElementById('ad-bait');
+        
+        // Give the ad blocker a brief moment to manipulate the DOM/network
+        setTimeout(() => {
+            let isAdBlockActive = false;
+
+            // Test 1: Check if the fake ad element was hidden or destroyed
+            if (!bait || bait.offsetParent === null || bait.offsetHeight === 0 || window.getComputedStyle(bait).display === 'none') {
+                isAdBlockActive = true;
+            }
+
+            // Test 2: Network-based check (Tries to fetch a file name that blockers hate)
+            fetch('/js/ads.js').catch(() => {
+                // If it fails, it's highly likely blocked by an extension, 
+                // but we rely on the DOM check as the primary indicator to avoid false positives from a 404.
+            });
+
+            // Update UI based on results
+            if (isAdBlockActive) {
+                statusBox.textContent = "AdBlock Detected! 🚫";
+                statusBox.className = "status detected";
+            } else {
+                statusBox.textContent = "No AdBlock Detected. ✅";
+                statusBox.className = "status not-detected";
+            }
+        }, 300); // 300ms delay ensures extensions have executed their hiding rules
+    });
+</script>
+
+</body>
+</html>
